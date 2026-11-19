@@ -46,8 +46,16 @@ select = [
 [tool.mypy]
 python_version = "3.12"
 strict = true
-files = ["tests"]
-exclude = ["transform/dbt_packages/", "transform/target/", "notebooks/"]
+# Whole repository: covers ingestion/, scoring/, api/, tests/ and any future Python folder.
+# Listing folders explicitly would fail while they are still empty ("no .py[i] files").
+files = ["."]
+exclude = [
+    '^\.venv/',
+    '^transform/dbt_packages/',
+    '^transform/target/',
+    '^notebooks/',  # exploration only, never imported
+    '^web/',        # TypeScript front, node_modules may ship .py files
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
