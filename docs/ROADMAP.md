@@ -16,18 +16,26 @@ Légende : `[x]` fait · `[~]` fait en partie · `[ ]` à faire.
 - [x] pre-commit (ruff, ruff-format, mypy, sqlfluff), test pytest minimal
 - [x] Makefile (`setup`, `lint`, `test`, `check`)
 - [x] `CLAUDE.md`, README racine
-- [~] CI GitHub Actions (`ci.yml`) : écrite, pas encore validée sur GitHub (rien n'est poussé)
+- [x] CI GitHub Actions (`ci.yml`) : au vert sur la pull request `phase-0` → `main` (actions épinglées par SHA)
 - **Sortie :** `make check` passe en local et en CI.
 
 > **Note.** En phase 0, la CI se limite à `make check` (lint + tests + `dbt debug`). Le `dbt build` sur un échantillon de 200 produits et les tests front prévus dans [ARCHITECTURE.md](ARCHITECTURE.md) arrivent avec les phases concernées.
 
 ## Phase 1 — Ingestion et audit des sources (4-5 jours)
 
+- [ ] Ajouter Polars aux dépendances (`uv add polars`)
 - [ ] Export OBF filtré sur les soins visage
 - [ ] Test de l'API Aromatheca
 - [ ] Notebook d'exploration
 - [ ] Cibles Makefile `ingest` (et `build` si utile)
 - **Sortie :** volumétrie et taux de remplissage documentés pour chaque source ; décision sur le volume du seed parfums.
+
+> **Décisions prises (à implémenter en phase 1).**
+>
+> - **Polars** est ajouté en phase 1 pour l'ingestion.
+> - **Chemin des données brutes** : Python télécharge l'export OBF, le filtre sur les soins visage et écrit du **Parquet dans `data/raw/`**. dbt déclare ces fichiers comme **sources** (lecture de Parquet externe par dbt-duckdb). Aucune table `raw` n'est donc créée par Python dans DuckDB : la frontière Python / dbt est le fichier Parquet.
+> - **Cible `dev`** : tous les soins visage filtrés.
+> - **Cible `ci`** : un Parquet figé de 200 produits, versionné dans `tests/fixtures/`, chargé **par le même chemin que les vraies données** (mêmes sources dbt, seul l'emplacement change selon la cible). Pas de seed dbt pour des données brutes : les seeds restent réservés aux référentiels saisis à la main.
 
 ## Phase 2 — Normalisation soins (1-2 semaines)
 
