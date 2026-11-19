@@ -1,0 +1,18 @@
+# Versioned on purpose: DuckDB only needs a file path, there is no secret here.
+# Paths are relative to transform/ (dbt is always run from this folder, see Makefile).
+# Target is chosen with the DBT_TARGET environment variable (default: dev).
+dupe_finder:
+  target: "{{ env_var('DBT_TARGET', 'dev') }}"
+  outputs:
+    dev:
+      type: duckdb
+      path: ../data/dev.duckdb
+      threads: 4
+    ci:
+      type: duckdb
+      path: ../data/ci.duckdb
+      threads: 2
+    prod:
+      type: duckdb
+      path: ../data/prod.duckdb
+      threads: 4
