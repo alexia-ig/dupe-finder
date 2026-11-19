@@ -1,0 +1,38 @@
+name: ci
+
+on:
+  pull_request:
+  # Allows a manual run from the Actions tab.
+  workflow_dispatch:
+
+# Cancel an in-progress run when a new commit is pushed to the same PR.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DBT_TARGET: ci
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v10
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Install Python 3.12
+        run: uv python install
+
+      - name: Setup (locked deps, git hooks, dbt packages)
+        run: make setup
+
+      - name: Check (lint + tests + dbt debug)
+        run: make check
