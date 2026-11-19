@@ -36,5 +36,18 @@ jobs:
       - name: Setup (locked deps, git hooks, dbt packages)
         run: make setup
 
+      # Hook environments (pre-commit-hooks clone + virtualenv) are cached;
+      # the key changes whenever .pre-commit-config.yaml changes.
+      - name: Cache pre-commit environments
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+
+      # Runs every hook, including the generic ones that `make lint` does not cover
+      # (trailing whitespace, end of file, YAML syntax, large files).
+      - name: Pre-commit hooks (all files)
+        run: uv run pre-commit run --all-files --show-diff-on-failure
+
       - name: Check (lint + tests + dbt debug)
         run: make check
