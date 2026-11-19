@@ -17,13 +17,16 @@ flowchart LR
     end
 
     subgraph ingestion["ingestion/ (Python + Polars)"]
-        raw[("data/*.duckdb<br/>schéma raw")]
+        dl["téléchargement<br/>+ filtre soins visage"]
     end
 
+    raw[/"data/raw/*.parquet<br/>(ci : tests/fixtures/)"/]
+
     subgraph transform["transform/ (dbt + DuckDB)"]
+        src["sources dbt<br/>(Parquet externe)"]
         stg["staging<br/>stg_*"]
         int["intermediate<br/>int_* (normalisation)"]
-        marts["marts<br/>dim_* · fct_*"]
+        marts[("marts dim_* · fct_*<br/>data/{target}.duckdb")]
     end
 
     subgraph serve["Exposition"]
@@ -34,11 +37,13 @@ flowchart LR
 
     scoring["scoring/<br/>(score Python de référence)"]
 
-    obf --> raw
-    cosing --> raw
-    aroma --> raw
+    obf --> dl
+    cosing --> dl
+    aroma --> dl
+    dl --> raw
+    raw --> src
     seeds --> stg
-    raw --> stg --> int --> marts
+    src --> stg --> int --> marts
     ref -.-> int
     marts --> api --> web
     marts --> docs
@@ -50,7 +55,9 @@ flowchart LR
 
 La couche intermediate, en couleur, porte la normalisation des ingrédients : c'est là que se joue la qualité du score.
 
-Les fichiers DuckDB et les exports bruts vivent dans `data/`, ignoré par git (seul `data/.gitkeep` est versionné).
+**Frontière Python / dbt : le fichier Parquet.** L'ingestion Python télécharge et filtre les sources, puis écrit du Parquet dans `data/raw/`. Elle n'écrit rien dans DuckDB. dbt déclare ces fichiers comme sources (lecture de Parquet externe par dbt-duckdb) et matérialise les modèles dans le fichier DuckDB de la cible (`data/dev.duckdb`, `data/ci.duckdb`, `data/prod.duckdb`). En CI, les sources pointent vers un Parquet figé de 200 produits dans `tests/fixtures/`, par le même chemin de chargement. Les seeds dbt sont réservés aux référentiels saisis à la main.
+
+Le contenu de `data/` est ignoré par git (seuls `data/.gitkeep` et `data/README.md` sont versionnés).
 
 ## 2. Stack technique
 

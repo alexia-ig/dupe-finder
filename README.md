@@ -14,10 +14,12 @@ C'est aussi une vitrine **Analytics Engineering / Data Governance** : pipeline d
 
 ```mermaid
 flowchart LR
-    src["Sources ouvertes<br/>Open Beauty Facts · CosIng<br/>Aromatheca · seeds"] --> ing["ingestion/<br/>Python + Polars"]
-    ing --> db[("DuckDB")]
-    db --> dbt["transform/<br/>dbt : staging → intermediate → marts"]
-    dbt --> api["api/<br/>FastAPI (lecture seule)"]
+    src["Sources ouvertes<br/>Open Beauty Facts · CosIng<br/>Aromatheca"] --> ing["ingestion/<br/>Python + Polars"]
+    ing --> raw[/"data/raw/*.parquet"/]
+    raw -- "sources dbt" --> dbt["transform/<br/>dbt : staging → intermediate → marts"]
+    seeds["seeds CSV<br/>(référentiels)"] --> dbt
+    dbt --> db[("DuckDB")]
+    db --> api["api/<br/>FastAPI (lecture seule)"]
     api --> web["web/<br/>React + Vite"]
     dbt --> docs["dbt docs<br/>catalogue + lignage"]
 ```
