@@ -6,16 +6,15 @@ readme = "README.md"
 license = "MIT"
 requires-python = ">=3.12,<3.13"
 dependencies = [
-    # dbt-core is pinned to 1.11.x: 1.12 requires dbt-core-experimental-parser,
-    # which ships as source only and fails to build on Windows (no wheel).
-    "dbt-core>=1.11,<1.12",
-    "dbt-duckdb>=1.11,<1.12",
+    # Minor version pinned: dbt packages (dbt_utils, dbt_expectations) declare
+    # compatible dbt ranges, so dbt upgrades are deliberate.
+    "dbt-core>=1.12,<1.13",
+    "dbt-duckdb>=1.11",
 ]
 
 [dependency-groups]
 dev = [
-    # mypy 2.x requires pathspec>=1.0, incompatible with dbt-core 1.11 (pathspec<0.13).
-    "mypy>=1.19,<2",
+    "mypy>=2.4",
     "pre-commit>=4.7.0",
     "pytest>=9.2.0",
     "ruff>=0.17.6",
