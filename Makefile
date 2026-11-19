@@ -7,8 +7,13 @@ SHELL := bash
 DBT_TARGET ?= dev
 export DBT_TARGET
 
-# Some antivirus HTTPS proxies set SSLKEYLOGFILE to a pseudo-file that makes OpenSSL
-# crash inside Python ("no OPENSSL_Applink"). dbt never needs TLS key logging.
+# Some Windows antivirus products that inspect HTTPS (e.g. Avast Web Shield) set
+# SSLKEYLOGFILE to a pseudo-file such as \\.\aswMonFltProxy\<id>. When Python's OpenSSL
+# tries to write TLS session keys there, the process crashes with
+# "OPENSSL_Uplink ... no OPENSSL_Applink" (seen with dbt). This variable is a debugging
+# aid only (TLS key logging for Wireshark-like tools); nothing in this project needs it,
+# so it is removed from the environment of every command run by make.
+# No effect in CI, where the variable is not set. See README "Dépannage".
 unexport SSLKEYLOGFILE
 
 DBT := cd transform && uv run dbt
