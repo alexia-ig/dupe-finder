@@ -16,6 +16,7 @@ htmlcov/
 # Data (downloaded exports and DuckDB files are never versioned)
 data/*
 !data/.gitkeep
+!data/README.md
 *.duckdb
 *.duckdb.wal
 
