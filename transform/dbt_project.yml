@@ -1,0 +1,29 @@
+name: dupe_finder
+version: "0.0.0"
+config-version: 2
+require-dbt-version: [">=1.12.0", "<1.13.0"]
+
+profile: dupe_finder
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+target-path: "target"
+clean-targets: ["target", "dbt_packages"]
+
+models:
+  dupe_finder:
+    # staging: light renaming/typing over raw sources, cheap to rebuild.
+    staging:
+      +materialized: view
+    # intermediate: normalization steps, not exposed to consumers.
+    intermediate:
+      +materialized: view
+    # marts: read by the API, materialized for fast reads.
+    marts:
+      +materialized: table
+
+seeds:
+  dupe_finder:
+    +quote_columns: false

@@ -1,0 +1,29 @@
+[sqlfluff]
+dialect = duckdb
+# Jinja templater with dbt builtins mocked (ref, source, var, config, is_incremental…):
+# fast, no database connection, no compiled manifest needed.
+templater = jinja
+max_line_length = 100
+exclude_rules = None
+
+[sqlfluff:templater:jinja]
+apply_dbt_builtins = True
+library_path = macros
+
+[sqlfluff:indentation]
+tab_space_size = 4
+
+[sqlfluff:rules:capitalisation.keywords]
+capitalisation_policy = lower
+
+[sqlfluff:rules:capitalisation.identifiers]
+extended_capitalisation_policy = lower
+
+[sqlfluff:rules:capitalisation.functions]
+extended_capitalisation_policy = lower
+
+[sqlfluff:rules:capitalisation.literals]
+capitalisation_policy = lower
+
+[sqlfluff:rules:capitalisation.types]
+extended_capitalisation_policy = lower

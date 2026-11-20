@@ -1,0 +1,53 @@
+name: ci
+
+on:
+  pull_request:
+  # Allows a manual run from the Actions tab.
+  workflow_dispatch:
+
+# Cancel an in-progress run when a new commit is pushed to the same PR.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DBT_TARGET: ci
+    steps:
+      # Actions are pinned by full commit SHA (immutable), version kept as a comment.
+      # Verified with `git ls-remote --tags <repo>`; setup-uv publishes no moving major tag.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2  # v10.3.3
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Install Python 3.12
+        run: uv python install
+
+      - name: Setup (locked deps, git hooks, dbt packages)
+        run: make setup
+
+      # Hook environments (pre-commit-hooks clone + virtualenv) are cached;
+      # the key changes whenever .pre-commit-config.yaml changes.
+      - name: Cache pre-commit environments
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+
+      # Runs every hook, including the generic ones that `make lint` does not cover
+      # (trailing whitespace, end of file, YAML syntax, large files).
+      - name: Pre-commit hooks (all files)
+        run: uv run pre-commit run --all-files --show-diff-on-failure
+
+      - name: Check (lint + tests + dbt debug)
+        run: make check
