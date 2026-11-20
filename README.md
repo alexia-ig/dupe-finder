@@ -54,25 +54,24 @@ make check   # lint + tests + dbt debug
 
 ## Dépannage
 
-### Windows et antivirus qui inspecte le HTTPS (Avast, AVG…)
+### Windows et antivirus
 
-Certains antivirus interceptent les connexions HTTPS en présentant leur propre certificat racine. Symptômes :
+**Symptômes.**
 
-| Symptôme | Cause |
-| --- | --- |
-| `uv` : `invalid peer certificate: UnknownIssuer` | uv ne fait pas confiance à la racine de l'antivirus |
-| `dbt deps` : `CERTIFICATE_VERIFY_FAILED` | `requests` utilise le bundle `certifi`, sans cette racine |
-| dbt plante avec `OPENSSL_Uplink … no OPENSSL_Applink` | l'antivirus définit `SSLKEYLOGFILE` vers un pseudo-fichier (`\\.\aswMonFltProxy\…`) |
+- Erreurs de certificat SSL pendant `make setup` : `invalid peer certificate: UnknownIssuer` avec uv, `CERTIFICATE_VERIFY_FAILED` avec `dbt deps`.
+- Hooks pre-commit qui restent bloqués sans rien afficher, et qu'on ne peut pas interrompre.
+- dbt qui plante au démarrage avec `OPENSSL_Uplink … no OPENSSL_Applink`.
 
-Solutions, de la plus propre à la plus large :
+**Cause.** Un antivirus qui inspecte les connexions HTTPS (il présente alors son propre certificat, que les outils Python ne reconnaissent pas), ou qui retient les exécutables inconnus pour les analyser (les hooks pre-commit installent leurs propres exécutables au premier lancement).
 
-1. **Exclusions dans l'analyse HTTPS de l'antivirus** (recommandé) pour les domaines utilisés par l'outillage : `pypi.org`, `files.pythonhosted.org`, `github.com`, `objects.githubusercontent.com`, `hub.getdbt.com`, `codeload.github.com`. Pour Avast : *Protection → Bouclier Web → Exceptions*.
-2. **Désactiver l'analyse HTTPS** du bouclier web (Avast : *Paramètres → Protection → Bouclier Web → décocher « Activer l'analyse HTTPS »*), au moins le temps de `make setup`.
-3. À défaut, côté outils, **sans désactiver la vérification TLS** :
-   - `setx UV_NATIVE_TLS 1` : uv utilise alors le magasin de certificats Windows, où se trouve la racine de l'antivirus ;
-   - pour `dbt deps`, pointer `REQUESTS_CA_BUNDLE` vers un bundle qui contient `certifi` et les racines Windows.
+**Solution.** Ajouter dans les exceptions de l'antivirus :
 
-Le `Makefile` retire `SSLKEYLOGFILE` de l'environnement de ses commandes (`unexport`), ce qui évite le plantage OpenSSL. Hors `make`, préfixer la commande : `env -u SSLKEYLOGFILE uv run dbt …`.
+- les domaines `pypi.org`, `files.pythonhosted.org`, `github.com` et `hub.getdbt.com` ;
+- le dossier `%USERPROFILE%\.cache\pre-commit\`.
+
+La marche à suivre dépend de l'antivirus et de sa version : voir sa documentation (pour Avast : [ajouter des exceptions](https://support.avast.com/article/168)).
+
+Le plantage `OPENSSL_Applink` vient de la variable `SSLKEYLOGFILE`, que certains antivirus définissent. Le `Makefile` la retire de l'environnement de ses commandes ; hors `make`, lancer la commande avec `env -u SSLKEYLOGFILE`.
 
 Ne jamais désactiver la vérification des certificats (`--trusted-host`, `verify=False`…) pour contourner ces erreurs.
 
